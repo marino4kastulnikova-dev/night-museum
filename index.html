@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Night Museum</title>
+  <meta name="description" content="A gesture-controlled gallery of eleven public-domain masterpieces. Runs locally in your browser with MediaPipe.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,400&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="stage" class="stage" data-screen="intro" data-camera="idle">
+
+    <!-- =================== 01 · INTRO =================== -->
+    <section id="intro" class="screen intro" aria-labelledby="intro-title">
+      <div class="spotlight intro-spot" aria-hidden="true"></div>
+      <div class="brand overline">Night Museum</div>
+      <div class="top-meta caption">11 works · public domain collection</div>
+
+      <figure class="intro-art">
+        <img id="intro-img" alt="The Birth of Venus by Sandro Botticelli" decoding="async">
+        <figcaption>
+          <span class="display-sm">The Birth of Venus</span>
+          <span class="caption muted">Sandro Botticelli · c. 1485 · Public domain</span>
+        </figcaption>
+      </figure>
+
+      <div class="intro-content">
+        <div class="headline-group">
+          <p class="overline brass">A gesture gallery</p>
+          <h1 id="intro-title" class="display-xl">Walk the gallery<br>with your hands.</h1>
+          <p class="body-lg muted">Eleven masterpieces, one camera. Move your hand to browse, show your palm to pause, pinch to look closer.</p>
+        </div>
+
+        <ol class="gesture-list">
+          <li><span class="caption brass">01</span><b class="label">Swipe</b><span class="body muted">Browse the collection</span></li>
+          <li><span class="caption brass">02</span><b class="label">Open palm</b><span class="body muted">Pause the gallery</span></li>
+          <li><span class="caption brass">03</span><b class="label">Pinch</b><span class="body muted">Open a painting</span></li>
+          <li><span class="caption brass">04</span><b class="label">Both palms</b><span class="body muted">Close and return</span></li>
+        </ol>
+
+        <div id="camera-alert" class="alert" role="alert" hidden>
+          <b class="label alert-title" id="alert-title">Camera access is blocked</b>
+          <span class="body" id="alert-body">Allow the camera for this site in your browser settings, then try again. You can also explore with the on-screen buttons.</span>
+        </div>
+
+        <div class="actions">
+          <button id="btn-enable" class="btn btn-primary" type="button">
+            <span class="spinner" aria-hidden="true"></span><span class="btn-label">Enable camera</span>
+          </button>
+          <button id="btn-skip" class="btn btn-ghost" type="button">Explore without camera</button>
+        </div>
+
+        <div id="camera-waiting" class="status-pill" hidden>
+          <span class="dot brass-bg pulse" aria-hidden="true"></span>
+          <span class="body">Waiting for permission — choose “Allow” in the browser prompt</span>
+        </div>
+
+        <p class="privacy body muted"><span class="dot brass-bg" aria-hidden="true"></span>The camera runs locally in your browser. Video is never recorded or uploaded.</p>
+      </div>
+
+      <div class="footer-tips caption subtle">
+        <span>Best in Chrome</span><span>Face a soft light</span><span>Stand 1–1.5 m from the camera</span>
+      </div>
+    </section>
+
+    <!-- =================== 02 · GALLERY =================== -->
+    <section id="gallery" class="screen gallery" aria-label="Gallery" hidden>
+      <div class="spotlight gallery-spot" aria-hidden="true"></div>
+      <div class="brand overline">Night Museum</div>
+
+      <div id="toast" class="toast" role="status" aria-live="polite">
+        <span class="dot brass-bg" aria-hidden="true"></span>
+        <b class="label" id="toast-title">Gallery moving</b>
+        <span class="body muted" id="toast-sub">Swipe to browse · show your palm to pause</span>
+      </div>
+
+      <div class="camera-module">
+        <div id="cam-pill" class="cam-pill">
+          <span class="dot" id="cam-dot" aria-hidden="true"></span>
+          <span class="caption" id="cam-label">Camera off</span>
+        </div>
+        <div id="cam-preview" class="cam-preview">
+          <video id="video" playsinline muted aria-label="Your camera, mirrored. Processed locally, never recorded."></video>
+          <canvas id="debug-canvas" hidden></canvas>
+          <span class="caption subtle cam-empty" id="cam-empty">Camera off</span>
+        </div>
+        <button id="btn-cam-toggle" class="link-btn caption" type="button">Turn on camera</button>
+      </div>
+
+      <div id="strip" class="strip" aria-roledescription="carousel"></div>
+      <div id="pinch-bar" class="pinch-bar" aria-hidden="true"><i></i></div>
+
+      <div class="focus-caption" id="focus-caption">
+        <span class="overline brass" id="cap-index">06 / 11</span>
+        <span class="display-md" id="cap-title">The Night Watch</span>
+        <span class="body muted" id="cap-credit">Rembrandt van Rijn · 1642</span>
+      </div>
+
+      <div class="progress" id="progress" aria-hidden="true"></div>
+
+      <div class="manual-controls" role="group" aria-label="Gallery controls">
+        <button class="ctrl" id="btn-prev" type="button" aria-label="Previous painting">← Prev</button>
+        <button class="ctrl" id="btn-pause" type="button">Pause</button>
+        <button class="ctrl" id="btn-open" type="button">Open</button>
+        <button class="ctrl" id="btn-next" type="button" aria-label="Next painting">Next →</button>
+      </div>
+
+      <ul class="gesture-guide" aria-label="Gestures">
+        <li data-hint="swipe"><b class="label">Swipe</b><span class="body subtle">— browse</span></li>
+        <li data-hint="palm"><b class="label">Open palm</b><span class="body subtle">— pause</span></li>
+        <li data-hint="pinch"><b class="label">Pinch</b><span class="body subtle">— open</span></li>
+        <li data-hint="close"><b class="label">Both palms</b><span class="body subtle">— close</span></li>
+      </ul>
+
+      <!-- expanded overlay -->
+      <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="ov-title" hidden>
+        <button id="btn-close" class="btn-close" type="button">✕&nbsp; Close</button>
+        <figure class="ov-art"><img id="ov-img" alt=""></figure>
+        <div class="ov-info">
+          <span class="overline brass" id="ov-index">06 / 11</span>
+          <h2 class="display-md" id="ov-title">The Night Watch</h2>
+          <span class="body-lg muted" id="ov-credit">Rembrandt van Rijn · 1642</span>
+          <hr>
+          <p class="body-lg" id="ov-desc"></p>
+          <span class="caption subtle" id="ov-medium"></span>
+        </div>
+        <div class="toast toast-bottom">
+          <span class="dot brass-bg" aria-hidden="true"></span>
+          <b class="label">Show both palms to close</b>
+          <span class="body muted">Swipes are ignored while a painting is open</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="debug-panel" class="debug-panel" hidden></div>
+
+  <script src="data.js"></script>
+  <script src="gestures.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
